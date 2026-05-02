@@ -197,11 +197,12 @@ export const runSimulation = (state) => {
     b3 = Math.max(0, b3);
 
     // ── REBALANCE if B1 empty ───────────────────
-    const b1WasInsufficient = withdrawalNeeded > 0; // after B1 attempt
+    const targetB1 = totalYearlyExpense * 2;
+    const rebalanceRequired = totalYearlyExpense * 1;
+    const b1WasInsufficient = b1 <= 0 || targetB1 < rebalanceRequired; 
 
     if (b1WasInsufficient && (b2 + b3) > 0) {
       const pool = b2 + b3;
-      const targetB1 = totalYearlyExpense * 2;
 
       // If total funds < needed → we can only partially refill
       const refillAmount = Math.min(targetB1, pool);
@@ -232,7 +233,7 @@ export const runSimulation = (state) => {
       bucket2: Math.round(b2),
       bucket3: Math.round(b3),
       total: Math.round(totalCorpus),
-      withdrawal: Math.round(actualWithdrawal), // ✅ FIXED
+      withdrawal: Math.round(actualWithdrawal), 
       b1Returns: Math.round(b1Returns),
       b2Returns: Math.round(b2Returns),
       b3Returns: Math.round(b3Returns),

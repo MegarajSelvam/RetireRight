@@ -157,12 +157,12 @@ export default function Summary({ state, setState, results }) {
                 <th>Year</th>
                 <th>Age</th>
                 <th>Withdrawal</th>
-                <th>B1 Ret</th>
-                <th>B2 Ret</th>
-                <th>B3 Ret</th>
                 <th>B1</th>
+                <th>B1 Ret</th>
                 <th>B2</th>
+                <th>B2 Ret</th>
                 <th>B3</th>
+                <th>B3 Ret</th>
                 <th>Total</th>
               </tr>
             </thead>
@@ -179,12 +179,12 @@ export default function Summary({ state, setState, results }) {
                     <td>{row.year}</td>
                     <td>{row.age}</td>
                     <td>{fmtINR(row.withdrawal)}</td>
-                    <td>+{fmtINR(row.b1Returns)}</td>
-                    <td>+{fmtINR(row.b2Returns)}</td>
-                    <td>+{fmtINR(row.b3Returns)}</td>
                     <td>{fmtINR(row.bucket1)}</td>
+                    <td>+{fmtINR(row.b1Returns)}</td>
                     <td>{fmtINR(row.bucket2)}</td>
+                    <td>+{fmtINR(row.b2Returns)}</td>
                     <td>{fmtINR(row.bucket3)}</td>
+                    <td>+{fmtINR(row.b3Returns)}</td>
                     <td>{fmtINR(total)}</td>
                   </tr>
                 );
