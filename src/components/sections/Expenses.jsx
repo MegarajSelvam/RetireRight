@@ -304,10 +304,12 @@ export default function Expenses({ state, setState }) {
           {[0, 5, 10, 15, 20].map(yr => {
             const gm = steppedMultiplier(yr, inflation.generalStep, inflation.generalFreq);
             const mm = steppedMultiplier(yr, inflation.medicalStep, inflation.medicalFreq);
+            const hm = getHousingMultiplier(yr);
             const edu = yr < expenses.education.years ? expenses.education.amount : 0;
-            const nonMed = (CATEGORIES.reduce((s, c) => s + (expenses[c.key] || 0), 0) + edu + (expenses.travel / 12)) * gm;
+            const housing = expenses.housing * hm;
+            const otherNonMed = (CATEGORIES.filter(c => c.key !== 'housing').reduce((s, c) => s + (expenses[c.key] || 0), 0) + edu + (expenses.travel / 12)) * gm;
             const med = medMonthly * mm;
-            const total = nonMed + med;
+            const total = housing + otherNonMed + med;
             return (
               <div key={yr} style={{
                 background: 'rgba(255,255,255,0.02)', borderRadius: 8,
@@ -316,13 +318,19 @@ export default function Expenses({ state, setState }) {
                 <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 6 }}>
                   {yr === 0 ? 'Today' : `Year ${yr}`}
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
-                  {fmtINR(nonMed)}
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                  {fmtINR(housing)}
                 </div>
-                <div style={{ fontSize: 10, color: 'var(--text-dim)', marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
-                  Regular
+                <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+                  Housing
                 </div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--accent-red)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
+                  {fmtINR(otherNonMed)}
+                </div>
+                <div style={{ fontSize: 9, color: 'var(--text-dim)', marginBottom: 4, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+                  Other Exp
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent-red)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>
                   {fmtINR(med)}
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--text-dim)' }}>
