@@ -3,11 +3,10 @@
  * @param {number} v
  * @returns {number}
  */
-const safe = (v) => (isNaN(v) || v == null ? 0 : v);
+const safe = (v) => (isNaN(v) || v == null ? 0 : Number(v));
 
 // ───────────────────────────────────────────────────────────────
 // Project future value with monthly contributions (compounding)
-// pv: present value, pmt: monthly contribution, annualRate: %, years: duration
 export const futureValue = (pv, pmt, annualRate, years) => {
   pv = safe(pv);
   pmt = safe(pmt);
@@ -16,7 +15,7 @@ export const futureValue = (pv, pmt, annualRate, years) => {
 
   if (years <= 0) return pv;
 
-  const r = annualRate / 100 / 12; // monthly rate
+  const r = annualRate / 100 / 12;
   const n = years * 12;
 
   if (r === 0) return pv + pmt * n;
@@ -28,7 +27,7 @@ export const futureValue = (pv, pmt, annualRate, years) => {
 };
 
 // ───────────────────────────────────────────────────────────────
-// Inflation multiplier with step increases (e.g. 5% every 3 years)
+// Inflation multiplier
 export const steppedMultiplier = (year, stepPct, freqYears) => {
   stepPct = safe(stepPct);
   freqYears = safe(freqYears);
@@ -44,7 +43,6 @@ export const steppedMultiplier = (year, stepPct, freqYears) => {
 export const runSimulation = (state) => {
   const { profile, portfolio, expenses, inflation, buckets } = state;
 
-  // Validate bucket allocation (must sum to 100%)
   const totalPct = safe(buckets.b1Pct) + safe(buckets.b2Pct) + safe(buckets.b3Pct);
   if (Math.round(totalPct) !== 100) {
     throw new Error("Bucket allocation must sum to 100%");
@@ -54,7 +52,7 @@ export const runSimulation = (state) => {
   const npsGapYears = Math.max(0, 60 - profile.retirementAge);
   const hasNPSInHorizon = profile.retirementAge < 60;
 
-  // ── Project assets to retirement ──────────────────────────────
+  // ── Asset projection ───────────────────────────
   const npsAtRetirement = futureValue(
     portfolio.nps.current, portfolio.nps.monthly,
     portfolio.nps.returnRate, yearsToRetirement
@@ -85,28 +83,28 @@ export const runSimulation = (state) => {
     portfolio.sgb.returnRate, yearsToRetirement
   );
 
-  // ── NPS projection to age 60 ──────────────────────────────────
+  // ── NPS ───────────────────────────────────────
   const npsAtSixty = futureValue(npsAtRetirement, 0, portfolio.nps.returnRate, npsGapYears);
 
   const npsLumpsum = npsAtSixty * 0.6;
   const npsAnnualAnnuity = npsAtSixty * 0.4 * (portfolio.nps.annuityRate / 100);
   const npsMonthlyAnnuity = npsAnnualAnnuity / 12;
 
-  // ── SWP corpus (exclude locked NPS) ───────────────────────────
+  // ── SWP Corpus ────────────────────────────────
   const physGoldSWP = portfolio.physicalGold.includeSWP ? physGoldAtRetirement : 0;
 
-  const naturalB1 = pfAtRetirement;
-  const naturalB2 = goldETFAtRetirement + sgbAtRetirement;
-  const naturalB3 = marketAtRetirement + physGoldSWP;
+  const swpCorpus =
+    pfAtRetirement +
+    goldETFAtRetirement +
+    sgbAtRetirement +
+    marketAtRetirement +
+    physGoldSWP;
 
-  const swpCorpus = naturalB1 + naturalB2 + naturalB3;
-
-  // Apply bucket allocation
   let b1 = swpCorpus * (buckets.b1Pct / 100);
   let b2 = swpCorpus * (buckets.b2Pct / 100);
   let b3 = swpCorpus * (buckets.b3Pct / 100);
 
-  // ── Base expense (today) ──────────────────────────────────────
+  // ── Base expense ──────────────────────────────
   const eduMonthly = safe(expenses.education?.amount);
 
   const baseMonthlyExpense =
@@ -122,7 +120,6 @@ export const runSimulation = (state) => {
     safe(expenses.lifestyle) +
     safe(expenses.misc);
 
-  // ── Simulation loop ───────────────────────────────────────────
   let npsInjected = false;
   let sustainedYears = 0;
   const simData = [];
@@ -130,18 +127,14 @@ export const runSimulation = (state) => {
   for (let yr = 0; yr <= 60; yr++) {
     const age = profile.retirementAge + yr;
 
-    // Inflation multipliers
+    // Inflation
     const genMult = steppedMultiplier(yr, inflation.generalStep, inflation.generalFreq);
     const medMult = steppedMultiplier(yr, inflation.medicalStep, inflation.medicalFreq);
 
-    // Housing inflation (clean separation: fixed vs %)
-    let housingMonthly;
-    if (inflation.housingType === 'fixed') {
-      housingMonthly = safe(expenses.housing) + safe(inflation.housingAnnual) * yr;
-    } else {
-      housingMonthly = safe(expenses.housing) *
-        Math.pow(1 + safe(inflation.housingAnnual) / 100, yr);
-    }
+    const housingMonthly =
+      inflation.housingType === 'fixed'
+        ? safe(expenses.housing) + safe(inflation.housingAnnual) * yr
+        : safe(expenses.housing) * Math.pow(1 + safe(inflation.housingAnnual) / 100, yr);
 
     const eduActive = yr < safe(expenses.education?.years);
 
@@ -161,14 +154,14 @@ export const runSimulation = (state) => {
     const totalMonthlyExpense = housingMonthly + otherMonthly + medMonthly;
     const totalYearlyExpense = totalMonthlyExpense * 12;
 
-    // Reduce expense by annuity income (post 60)
     const annuityIncome = (age >= 60 && hasNPSInHorizon)
       ? npsAnnualAnnuity
       : 0;
 
-    let withdrawal = Math.max(0, totalYearlyExpense - annuityIncome);
+    let withdrawalNeeded = Math.max(0, totalYearlyExpense - annuityIncome);
+    const actualWithdrawal = withdrawalNeeded;
 
-    // ── Step 1: Apply returns ───────────────────────────────────
+    // ── RETURNS FIRST ───────────────────────────
     const b1Returns = b1 * (buckets.b1Return / 100);
     const b2Returns = b2 * (buckets.b2Return / 100);
     const b3Returns = b3 * (buckets.b3Return / 100);
@@ -177,7 +170,7 @@ export const runSimulation = (state) => {
     b2 += b2Returns;
     b3 += b3Returns;
 
-    // ── Step 2: NPS injection at 60 ─────────────────────────────
+    // ── NPS injection ───────────────────────────
     let npsInjectionThisYear = false;
     if (age >= 60 && hasNPSInHorizon && !npsInjected) {
       b1 += npsLumpsum * 0.4;
@@ -187,27 +180,44 @@ export const runSimulation = (state) => {
       npsInjectionThisYear = true;
     }
 
-    // ── Step 3: Withdrawal cascade (B1 → B2 → B3) ───────────────
-    const takeFrom = (bucket, amount) => {
+    // ── WITHDRAWAL CASCADE ──────────────────────
+    let reallocationHappened = false;
+
+    const take = (bucket, amount) => {
       const used = Math.min(bucket, amount);
       return [bucket - used, amount - used];
     };
 
-    [b1, withdrawal] = takeFrom(b1, withdrawal);
-    [b2, withdrawal] = takeFrom(b2, withdrawal);
-    [b3, withdrawal] = takeFrom(b3, withdrawal);
+    [b1, withdrawalNeeded] = take(b1, withdrawalNeeded);
+    [b2, withdrawalNeeded] = take(b2, withdrawalNeeded);
+    [b3, withdrawalNeeded] = take(b3, withdrawalNeeded);
 
-    // No negative buckets allowed
     b1 = Math.max(0, b1);
     b2 = Math.max(0, b2);
     b3 = Math.max(0, b3);
 
+    // ── REBALANCE if B1 empty ───────────────────
+    if (b1 === 0 && (b2 + b3) > 0) {
+      const pool = b2 + b3;
+      const targetB1 = totalYearlyExpense * 2;
+
+      if (pool > targetB1) {
+        b1 = targetB1;
+        b2 = pool - targetB1;
+        b3 = 0;
+      } else {
+        b1 = pool;
+        b2 = 0;
+        b3 = 0;
+      }
+
+      reallocationHappened = true;
+    }
+
     const totalCorpus = b1 + b2 + b3;
 
-    // Track survival correctly
     if (totalCorpus > 0) sustainedYears = yr;
 
-    // ── Record year snapshot ────────────────────────────────────
     simData.push({
       year: yr,
       age,
@@ -215,21 +225,20 @@ export const runSimulation = (state) => {
       bucket2: Math.round(b2),
       bucket3: Math.round(b3),
       total: Math.round(totalCorpus),
-      withdrawal: Math.round(totalYearlyExpense),
+      withdrawal: Math.round(actualWithdrawal), // ✅ FIXED
       b1Returns: Math.round(b1Returns),
       b2Returns: Math.round(b2Returns),
       b3Returns: Math.round(b3Returns),
       totalReturns: Math.round(b1Returns + b2Returns + b3Returns),
       monthlyExpense: Math.round(totalMonthlyExpense),
-      annuityIncome: Math.round(npsMonthlyAnnuity), // correct monthly display
+      annuityIncome: Math.round(npsMonthlyAnnuity),
+      reallocationHappened,
       npsInjectionThisYear,
     });
 
-    // Stop when corpus is exhausted
     if (totalCorpus <= 0) break;
   }
 
-  // ── Today portfolio value ─────────────────────────────────────
   const todayTotal =
     safe(portfolio.nps.current) +
     safe(portfolio.pf.current) +
