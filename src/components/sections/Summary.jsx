@@ -194,59 +194,89 @@ export default function Summary({ state, setState, results }) {
 
       {/* Year-by-year table (first 10 years) */}
       <Card>
-        <SectionLabel>Year-by-Year Snapshot (Full Timeline)</SectionLabel>
+        <SectionLabel>Year-by-Year Retirement Simulation</SectionLabel>
         <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
-          Track how each bucket depletes over the retirement years. Corpus hits zero when both SWP and NPS annuity can no longer cover monthly expenses.
+          Each year: buckets earn returns → you withdraw → Bucket 1 rebalances when depleted
         </p>
         
         {/* Legend for colored columns */}
         <div style={{ display: 'flex', gap: 16, marginBottom: 12, fontSize: 11, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 12, height: 12, background: 'var(--accent-cyan)', borderRadius: 2 }} />
-            <span style={{ color: 'var(--text-muted)' }}>Bucket 1 (Liquid)</span>
+            <span style={{ color: 'var(--text-muted)' }}>Bucket 1 (6.5%)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 12, height: 12, background: 'var(--accent-blue)', borderRadius: 2 }} />
-            <span style={{ color: 'var(--text-muted)' }}>Bucket 2 (Debt)</span>
+            <span style={{ color: 'var(--text-muted)' }}>Bucket 2 (9%)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 12, height: 12, background: 'var(--accent-green)', borderRadius: 2 }} />
-            <span style={{ color: 'var(--text-muted)' }}>Bucket 3 (Equity)</span>
+            <span style={{ color: 'var(--text-muted)' }}>Bucket 3 (13%)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <div style={{ width: 12, height: 12, background: 'var(--accent-orange)', borderRadius: 2 }} />
-            <span style={{ color: 'var(--text-muted)' }}>Expense/NPS</span>
+            <span style={{ color: 'var(--text-muted)' }}>Withdrawal</span>
           </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, fontFamily: 'var(--font-mono)' }}>
             <thead>
               <tr style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>
-                {['Year', 'Age', 'Monthly Expense', 'NPS Annuity', 'Bucket 1', 'Bucket 2', 'Bucket 3', 'Total'].map(h => (
-                  <th key={h} style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>Year</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>Age</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>Withdrawal</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>B1 Returns</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>B2 Returns</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>B3 Returns</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>Bucket 1</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>Bucket 2</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>Bucket 3</th>
+                <th style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 500, whiteSpace: 'nowrap' }}>Total</th>
+                <th style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 500, whiteSpace: 'nowrap' }}>Event</th>
               </tr>
             </thead>
             <tbody>
               {simData.map((row, i) => (
                 <tr key={i} style={{
                   borderBottom: '1px solid rgba(255,255,255,0.03)',
-                  background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
+                  background: row.reallocationHappened 
+                    ? 'rgba(255,167,38,0.08)'
+                    : row.npsInjectionThisYear 
+                    ? 'rgba(102,187,106,0.08)'
+                    : i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',
                   color: row.total === 0 ? 'var(--accent-red)' : 'var(--text-primary)'
                 }}>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--text-muted)' }}>{row.year}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right' }}>{row.age}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-orange)' }}>{fmtINR(row.monthlyExpense)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-green)' }}>{row.annuityIncome > 0 ? fmtINR(row.annuityIncome) : '—'}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-orange)', fontWeight: 500 }}>{fmtINR(row.withdrawal)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-cyan)', fontSize: 9 }}>+{fmtINR(row.b1Returns)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-blue)', fontSize: 9 }}>+{fmtINR(row.b2Returns)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-green)', fontSize: 9 }}>+{fmtINR(row.b3Returns)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-cyan)' }}>{fmtINR(row.bucket1)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-blue)' }}>{fmtINR(row.bucket2)}</td>
                   <td style={{ padding: '7px 10px', textAlign: 'right', color: 'var(--accent-green)' }}>{fmtINR(row.bucket3)}</td>
-                  <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 600 }}>{fmtINR(row.total)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 600, color: row.total === 0 ? 'var(--accent-red)' : 'var(--text-primary)' }}>{fmtINR(row.total)}</td>
+                  <td style={{ padding: '7px 10px', textAlign: 'center', fontSize: 11 }}>
+                    {row.reallocationHappened && <span title="B1 depleted, rebalanced B1+B2">🔄</span>}
+                    {row.npsInjectionThisYear && <span title="NPS injected: 40% B1, 30% B2, 30% B3">💰</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Context legend */}
+        <div style={{ marginTop: 14, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, fontSize: 10, color: 'var(--text-muted)' }}>
+          <div style={{ marginBottom: 6 }}>
+            <strong>Column Guide:</strong>
+          </div>
+          <div style={{ marginBottom: 4 }}>• <strong>Withdrawal</strong> = Annual amount taken from buckets</div>
+          <div style={{ marginBottom: 4 }}>• <strong>B1/B2/B3 Returns</strong> = ₹ earned each bucket that year</div>
+          <div style={{ marginBottom: 4 }}>• <strong>Bucket N</strong> = Remaining balance after withdrawal</div>
+          <div style={{ marginBottom: 4 }}>• <strong>Event 🔄</strong> = Bucket 1 depleted → Auto-rebalanced from B1+B2 pool (B3 untouched)</div>
+          <div>• <strong>Event 💰</strong> = NPS lump sum injected (40% B1, 30% B2, 30% B3 for safety)</div>
         </div>
       </Card>
     </div>

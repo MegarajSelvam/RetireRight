@@ -30,6 +30,8 @@ export const DEFAULT_STATE = {
     generalFreq: 3,
     medicalStep: 20,
     medicalFreq: 3,
+    housingType: 'fixed', // 'fixed' or 'percentage'
+    housingAnnual: 500, // ₹ per year if fixed, % per year if percentage
   },
   buckets: {
     b1Pct: 20,

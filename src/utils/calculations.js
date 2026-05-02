@@ -90,24 +90,30 @@ export const runSimulation = (state) => {
   for (let yr = 0; yr <= 60; yr++) {
     const age = profile.retirementAge + yr;
 
-    // NPS injection at age 60
-    if (age >= 60 && hasNPSInHorizon && !npsInjected) {
-      b3 += npsLumpsum;
-      npsInjected = true;
-    }
-
     // This year's expenses (stepped inflation)
     const genMult = steppedMultiplier(yr, inflation.generalStep, inflation.generalFreq);
     const medMult = steppedMultiplier(yr, inflation.medicalStep, inflation.medicalFreq);
+    
+    // Housing inflation (separate from general inflation)
+    let housingMultiplier = 1;
+    if (inflation.housingType === 'fixed') {
+      // Fixed annual increase (e.g., ₹500/year)
+      housingMultiplier = 1 + (inflation.housingAnnual / expenses.housing) * yr;
+    } else {
+      // Percentage annual increase (e.g., 5% per year)
+      housingMultiplier = Math.pow(1 + inflation.housingAnnual / 100, yr);
+    }
 
     const eduActive = yr < expenses.education.years;
-    const nonMedMonthly = (
-      expenses.housing + expenses.groceries +
+    const housingMonthly = expenses.housing * housingMultiplier;
+    const otherNonMedMonthly = (
+      expenses.groceries +
       (eduActive ? eduMonthly : 0) + expenses.parents +
       expenses.utilities + expenses.transport + expenses.insurance +
       (expenses.travel / 12) + expenses.lifestyle + expenses.misc
     ) * genMult;
 
+    const nonMedMonthly = housingMonthly + otherNonMedMonthly;
     const medMonthly = expenses.medical * medMult;
     const totalMonthlyExpense = nonMedMonthly + medMonthly;
     const totalYearlyExpense = totalMonthlyExpense * 12;
@@ -116,8 +122,63 @@ export const runSimulation = (state) => {
     const annuityIncome = (age >= 60 && hasNPSInHorizon) ? npsMonthlyAnnuity * 12 : 0;
     const netYearlyWithdrawal = Math.max(0, totalYearlyExpense - annuityIncome);
 
-    const totalCorpus = Math.max(0, b1 + b2 + b3);
+    // ── Step 1: Apply returns to each bucket ────────────────────
+    const b1Returns = b1 * (buckets.b1Return / 100);
+    const b2Returns = b2 * (buckets.b2Return / 100);
+    const b3Returns = b3 * (buckets.b3Return / 100);
+    
+    b1 += b1Returns;
+    b2 += b2Returns;
+    b3 += b3Returns;
 
+    // ── Step 2: NPS Injection at age 60 (split 40:30:30) ─────────
+    let npsInjectionThisYear = false;
+    if (age >= 60 && hasNPSInHorizon && !npsInjected) {
+      b1 += npsLumpsum * 0.4;
+      b2 += npsLumpsum * 0.3;
+      b3 += npsLumpsum * 0.3;
+      npsInjected = true;
+      npsInjectionThisYear = true;
+    }
+
+    // ── Step 3: Withdraw from B1 first ──────────────────────────
+    let withdrawal = netYearlyWithdrawal;
+    b1 -= withdrawal;
+
+    // ── Step 4: Handle B1 depletion (cascade & rebalance) ────────
+    let reallocationHappened = false;
+    if (b1 < 0) {
+      // B1 went negative, pull from B2
+      const b1Shortfall = Math.abs(b1);
+      b2 -= b1Shortfall;
+      b1 = 0;
+
+      // Check if B2 also went negative
+      if (b2 < 0) {
+        b3 += b2; // B2 negative goes to B3
+        b2 = 0;
+      }
+
+      // Now rebalance B1 & B2 from their combined pool (keep B3 untouched)
+      const b1b2Pool = b1 + b2;
+      if (b1b2Pool > 0) {
+        const targetB1 = b1b2Pool * (20 / 50); // 20% of (B1+B2) pool
+        const targetB2 = b1b2Pool * (30 / 50); // 30% of (B1+B2) pool
+        b1 = targetB1;
+        b2 = targetB2;
+        reallocationHappened = true;
+      }
+    }
+
+    if (b3 < 0) b3 = 0;
+
+    const totalCorpus = Math.max(0, b1 + b2 + b3);
+    
+    // Check if corpus exists before this year's withdrawal
+    const corpusExistsThisYear = (b1 + b2 + b3 + Math.abs(Math.min(0, b1)) + Math.abs(Math.min(0, b2))) > 0 || totalCorpus > 0;
+    if (corpusExistsThisYear) sustainedYears = yr;
+
+    // ── Record everything ──────────────────────────────────────────
     simData.push({
       year: yr,
       age,
@@ -125,24 +186,18 @@ export const runSimulation = (state) => {
       bucket2: Math.max(0, Math.round(b2)),
       bucket3: Math.max(0, Math.round(b3)),
       total: Math.max(0, Math.round(totalCorpus)),
+      withdrawal: Math.round(withdrawal),
+      b1Returns: Math.round(b1Returns),
+      b2Returns: Math.round(b2Returns),
+      b3Returns: Math.round(b3Returns),
+      totalReturns: Math.round(b1Returns + b2Returns + b3Returns),
       monthlyExpense: Math.round(totalMonthlyExpense),
       annuityIncome: Math.round(annuityIncome / 12),
-      netMonthlyWithdrawal: Math.round(netYearlyWithdrawal / 12),
+      reallocationHappened,
+      npsInjectionThisYear,
     });
 
-    if (totalCorpus > 0) sustainedYears = yr;
     if (totalCorpus <= 0) break;
-
-    // Grow buckets for next year
-    b1 = b1 * (1 + buckets.b1Return / 100);
-    b2 = b2 * (1 + buckets.b2Return / 100);
-    b3 = b3 * (1 + buckets.b3Return / 100);
-
-    // Withdraw from B1 first
-    b1 -= netYearlyWithdrawal;
-    if (b1 < 0) { b2 += b1; b1 = 0; }
-    if (b2 < 0) { b3 += b2; b2 = 0; }
-    if (b3 < 0) b3 = 0;
   }
 
   // ── Portfolio composition today ────────────────────────────────
