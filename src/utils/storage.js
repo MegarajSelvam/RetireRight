@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'retireright_v1';
+const THEME_KEY = 'retireright_theme';
 
 export const saveToStorage = (state) => {
   try {
@@ -14,6 +15,25 @@ export const loadFromStorage = () => {
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
     return null;
+  }
+};
+
+export const saveTheme = (theme) => {
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch (e) {
+    console.warn('Could not save theme:', e);
+  }
+};
+
+export const loadTheme = () => {
+  try {
+    const theme = localStorage.getItem(THEME_KEY);
+    if (theme) return theme;
+    // Detect system preference if no saved preference
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  } catch (e) {
+    return 'dark';
   }
 };
 

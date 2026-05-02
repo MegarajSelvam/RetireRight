@@ -64,39 +64,45 @@ export default function Summary({ state, setState, results }) {
         borderRadius: 'var(--radius)', padding: '24px', marginBottom: 20, textAlign: 'center'
       }}>
         <div style={{ fontSize: 11, letterSpacing: 2.5, color: 'var(--text-muted)', marginBottom: 8 }}>
-          CORPUS SUSTAINS FOR
+          EXPECTED RUNOUT AGE
         </div>
         <div style={{
           fontSize: 64, fontWeight: 800, fontFamily: 'var(--font-mono)',
           color: isHealthy ? 'var(--accent-green)' : 'var(--accent-red)', lineHeight: 1
         }}>
-          {sustainedYears}
+          {profile.retirementAge + sustainedYears}
         </div>
         <div style={{ fontSize: 16, color: 'var(--text-secondary)', marginTop: 4 }}>
-          years after retirement · Until age <strong style={{ color: isHealthy ? 'var(--accent-green)' : 'var(--accent-red)' }}>{ageAtEnd}</strong>
+          Retirement starts at age <strong>{profile.retirementAge}</strong>, and the corpus is estimated to cover <strong style={{ color: isHealthy ? 'var(--accent-green)' : 'var(--accent-red)' }}>{sustainedYears} years</strong> of spending.
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+          This means your savings are expected to last until age <strong>{profile.retirementAge + sustainedYears}</strong>.
         </div>
         {!isHealthy && (
           <div style={{ marginTop: 12, fontSize: 12, color: 'var(--accent-red)', background: 'rgba(239,83,80,0.1)', borderRadius: 8, padding: '8px 14px', display: 'inline-block' }}>
-            ⚠️ Corpus runs out before 25 years — consider increasing savings or reducing withdrawal
+            ⚠️ Corpus runs out before 25 years — consider increasing savings, reducing withdrawal, or raising allocation to higher-return assets.
           </div>
         )}
       </div>
 
       {/* Key Metrics */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
-        <MetricTile label="SWP Corpus at Retirement" value={fmtINR(swpCorpus)} sub="Excluding NPS (locked)" color="var(--accent-blue)" />
-        <MetricTile label="Total Incl. NPS" value={fmtINR(totalCorpusWithNPS)} sub="NPS unlocks at 60" color="var(--accent-orange)" />
-        <MetricTile label="Monthly Expense Today" value={fmtINR(baseMonthlyExpense)} sub="Current level" color="var(--text-secondary)" />
-        <MetricTile label="Years to Retirement" value={`${yearsToRetirement} yrs`} sub={`Retire at ${profile.retirementAge}`} color="var(--accent-cyan)" />
+        <MetricTile label="SWP Corpus at Retirement" value={fmtINR(swpCorpus)} sub="Base amount for systematic withdrawals (excludes NPS)" color="var(--accent-blue)" />
+        <MetricTile label="Total Incl. NPS" value={fmtINR(totalCorpusWithNPS)} sub="SWP corpus + NPS value (NPS unlocks at 60)" color="var(--accent-orange)" />
+        <MetricTile label="Monthly Expense Today" value={fmtINR(baseMonthlyExpense)} sub="Your current spending level" color="var(--text-secondary)" />
+        <MetricTile label="Years to Retirement" value={`${yearsToRetirement} yrs`} sub={`Retire at age ${profile.retirementAge}`} color="var(--accent-cyan)" />
       </div>
 
       {hasNPSInHorizon && (
         <Card style={{ marginBottom: 20, borderColor: 'rgba(255,167,38,0.2)', background: 'rgba(255,167,38,0.04)' }}>
-          <SectionLabel>🏛️ NPS at Age 60</SectionLabel>
+          <SectionLabel>🏛️ NPS at Age 60 (Pension Plan)</SectionLabel>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
+            NPS becomes accessible once you reach 60. The lump sum (60%) gets added to Bucket 3 to boost long-term growth, while the annuity provides steady income.
+          </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
             <MetricTile label="NPS at Retirement" value={fmtINR(npsAtRetirement)} color="var(--accent-orange)" />
-            <MetricTile label="Lump Sum (60%)" value={fmtINR(npsLumpsum)} sub="→ Bucket 3" color="var(--accent-orange)" />
-            <MetricTile label="Monthly Annuity" value={fmtINR(npsMonthlyAnnuity)} sub="From age 60 onwards" color="var(--accent-green)" />
+            <MetricTile label="Lump Sum (60%)" value={fmtINR(npsLumpsum)} sub="→ Invested in Bucket 3" color="var(--accent-orange)" />
+            <MetricTile label="Monthly Annuity" value={fmtINR(npsMonthlyAnnuity)} sub="Guaranteed income from age 60+" color="var(--accent-green)" />
           </div>
         </Card>
       )}
@@ -148,26 +154,71 @@ export default function Summary({ state, setState, results }) {
         </Card>
 
         <Card>
-          <SectionLabel>⚡ Quick Edit</SectionLabel>
+          <SectionLabel>⚡ Quick Edit — Live Impact</SectionLabel>
           <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 14 }}>
-            Adjust key levers to see live impact on sustainability.
+            Adjust key assumptions to instantly see how they affect sustainability. Watch the hero number update in real-time.
           </p>
-          <SliderInput label="Market Return %" value={state.portfolio.market.returnRate}
-            min={8} max={18} step={0.5} display={`${state.portfolio.market.returnRate}%`}
-            onChange={setMarketReturn} color="var(--accent-green)" />
-          <SliderInput label="Bucket 3 Return %" value={state.buckets.b3Return}
-            min={8} max={20} step={0.5} display={`${state.buckets.b3Return}%`}
-            onChange={setB3Return} color="var(--accent-green)" />
-          <SliderInput label="Inflation Step %" value={state.inflation.generalStep}
-            min={5} max={30} step={1} display={`+${state.inflation.generalStep}%`}
-            onChange={v => setState(s => ({ ...s, inflation: { ...s.inflation, generalStep: v } }))}
-            color="var(--accent-orange)" />
+          
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2, fontWeight: 500 }}>
+              Market Return % <span style={{ fontSize: 9, color: 'var(--accent-blue)' }}>← Overall portfolio growth</span>
+            </div>
+            <SliderInput label="Market Return %" value={state.portfolio.market.returnRate}
+              min={8} max={18} step={0.5} display={`${state.portfolio.market.returnRate}%`}
+              onChange={setMarketReturn} color="var(--accent-green)" />
+            <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>Historical avg: 10%–12%. Adjust based on your risk appetite.</div>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2, fontWeight: 500 }}>
+              Bucket 3 Return % <span style={{ fontSize: 9, color: 'var(--accent-green)' }}>← Equity growth in long-term bucket</span>
+            </div>
+            <SliderInput label="Bucket 3 Return %" value={state.buckets.b3Return}
+              min={8} max={20} step={0.5} display={`${state.buckets.b3Return}%`}
+              onChange={setB3Return} color="var(--accent-green)" />
+            <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>Used for aggressive growth. Higher returns need more time to recover from downturns.</div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2, fontWeight: 500 }}>
+              Inflation Step % <span style={{ fontSize: 9, color: 'var(--accent-orange)' }}>← Annual expense increase</span>
+            </div>
+            <SliderInput label="Inflation Step %" value={state.inflation.generalStep}
+              min={5} max={30} step={1} display={`+${state.inflation.generalStep}%`}
+              onChange={v => setState(s => ({ ...s, inflation: { ...s.inflation, generalStep: v } }))}
+              color="var(--accent-orange)" />
+            <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 4 }}>Typical range: 5%–7%. Higher inflation drains corpus faster.</div>
+          </div>
         </Card>
       </div>
 
       {/* Year-by-year table (first 10 years) */}
       <Card>
-        <SectionLabel>Year-by-Year Snapshot (First 15 Years)</SectionLabel>
+        <SectionLabel>Year-by-Year Snapshot (Full Timeline)</SectionLabel>
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
+          Track how each bucket depletes over the retirement years. Corpus hits zero when both SWP and NPS annuity can no longer cover monthly expenses.
+        </p>
+        
+        {/* Legend for colored columns */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 12, fontSize: 11, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: 'var(--accent-cyan)', borderRadius: 2 }} />
+            <span style={{ color: 'var(--text-muted)' }}>Bucket 1 (Liquid)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: 'var(--accent-blue)', borderRadius: 2 }} />
+            <span style={{ color: 'var(--text-muted)' }}>Bucket 2 (Debt)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: 'var(--accent-green)', borderRadius: 2 }} />
+            <span style={{ color: 'var(--text-muted)' }}>Bucket 3 (Equity)</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, background: 'var(--accent-orange)', borderRadius: 2 }} />
+            <span style={{ color: 'var(--text-muted)' }}>Expense/NPS</span>
+          </div>
+        </div>
+
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: 'var(--font-mono)' }}>
             <thead>
@@ -178,7 +229,7 @@ export default function Summary({ state, setState, results }) {
               </tr>
             </thead>
             <tbody>
-              {simData.slice(0, 15).map((row, i) => (
+              {simData.map((row, i) => (
                 <tr key={i} style={{
                   borderBottom: '1px solid rgba(255,255,255,0.03)',
                   background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)',

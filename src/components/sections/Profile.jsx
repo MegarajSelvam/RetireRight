@@ -18,7 +18,7 @@ export default function Profile({ state, setState }) {
         <SectionLabel>Your Details</SectionLabel>
         <div style={{ marginBottom: 18 }}>
           <label style={{ fontSize: 12, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Your Name</label>
-          <input type="text" placeholder="e.g. Karthik" value={profile.name}
+          <input type="text" placeholder="e.g. Megaraj" value={profile.name}
             onChange={e => set('name', e.target.value)} />
         </div>
         <SliderInput label="Current Age" value={profile.currentAge} min={22} max={65} step={1}

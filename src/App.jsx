@@ -4,7 +4,7 @@ import Portfolio from './components/sections/Portfolio';
 import Expenses from './components/sections/Expenses';
 import BucketStrategy from './components/sections/BucketStrategy';
 import Summary from './components/sections/Summary';
-import { saveToStorage, loadFromStorage, exportJSON, importJSON } from './utils/storage';
+import { saveToStorage, loadFromStorage, saveTheme, loadTheme, exportJSON, importJSON } from './utils/storage';
 import { runSimulation } from './utils/calculations';
 import { DEFAULT_STATE } from './utils/defaults';
 import { fmtINR } from './utils/formatters';
@@ -22,7 +22,20 @@ export default function App() {
   const [state, setStateRaw]  = useState(() => loadFromStorage() || DEFAULT_STATE);
   const [results, setResults] = useState(null);
   const [saved, setSaved]     = useState(false);
+  const [theme, setThemeRaw]  = useState(() => loadTheme());
   const importRef             = useRef();
+
+  // Apply theme to document and save preference
+  const setTheme = useCallback((newTheme) => {
+    setThemeRaw(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    saveTheme(newTheme);
+  }, []);
+
+  // Initialize theme on mount
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, []);
 
   // Auto-save to localStorage on every change
   const setState = useCallback((updater) => {
@@ -137,6 +150,9 @@ export default function App() {
         {/* Actions */}
         <div style={{ display: 'flex', gap: 8 }}>
           <input ref={importRef} type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
+          <ActionBtn onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </ActionBtn>
           <ActionBtn onClick={() => importRef.current.click()} title="Import">📂</ActionBtn>
           <ActionBtn onClick={handleExport} title={saved ? 'Saved!' : 'Export'} highlight={saved}>
             {saved ? '✅' : '💾'}

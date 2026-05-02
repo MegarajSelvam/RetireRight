@@ -4,6 +4,23 @@ A comprehensive, India-specific retirement planning tool built for people who wa
 
 ---
 
+## 🔗 Quick Start
+
+**Live Demo:** [megarajselvam.github.io/RetireRight](https://megarajselvam.github.io/RetireRight/) ✨
+
+**Or run locally:**
+
+```bash
+git clone https://github.com/MegarajSelvam/RetireRight.git
+cd RetireRight
+npm install
+npm run dev
+```
+
+Then open **[http://localhost:5173](http://localhost:5173)** in your browser. 🎉
+
+---
+
 ## ✨ What It Does
 
 RetireRight helps you answer the single most important question:
