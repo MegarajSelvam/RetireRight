@@ -57,88 +57,6 @@ export default function Expenses({ state, setState }) {
       <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>
         Enter your current monthly expenses. We'll apply realistic stepped inflation going forward.
       </p>
-
-      {/* Total */}
-      <Card style={{ marginBottom: 20, background: 'rgba(100,181,246,0.05)', borderColor: 'rgba(100,181,246,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>TOTAL MONTHLY EXPENSE TODAY</div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{fmtINR(totalMonthly)}</div>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Yearly</div>
-            <div style={{ fontSize: 16, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{fmtINR(totalMonthly * 12)}</div>
-          </div>
-        </div>
-
-        {/* Medical vs Non-Medical split */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
-          <div style={{ background: 'rgba(100,181,246,0.1)', padding: '10px 12px', borderRadius: 6 }}>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>Non-Medical</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{fmtINR(nonMedTotal)}</div>
-            <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{((nonMedTotal / totalMonthly) * 100).toFixed(0)}% of total</div>
-          </div>
-          <div style={{ background: 'rgba(239,83,80,0.1)', padding: '10px 12px', borderRadius: 6 }}>
-            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>Medical & Health</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-red)', fontFamily: 'var(--font-mono)' }}>{fmtINR(medMonthly)}</div>
-            <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{((medMonthly / totalMonthly) * 100).toFixed(0)}% of total</div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Expense breakdown by category */}
-      <Card style={{ marginBottom: 20 }}>
-        <SectionLabel>Where Your Money Goes</SectionLabel>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'center' }}>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie
-                data={CATEGORIES
-                  .map(c => ({ name: c.label.split('(')[0].trim(), value: expenses[c.key], icon: c.icon }))
-                  .filter(c => c.value > 0)
-                  .sort((a, b) => b.value - a.value)}
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={80}
-                dataKey="value"
-                paddingAngle={2}
-              >
-                {['var(--accent-cyan)', 'var(--accent-blue)', 'var(--accent-green)', 'var(--accent-orange)', 'var(--accent-purple)', '#FF6B6B', '#4ECDC4', '#95E1D3'].map((color, i) => (
-                  <Cell key={i} fill={color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v) => fmtINR(v)} />
-            </PieChart>
-          </ResponsiveContainer>
-
-          <div style={{ fontSize: 11 }}>
-            {CATEGORIES
-              .map(c => ({ ...c, val: expenses[c.key] }))
-              .filter(c => c.val > 0)
-              .sort((a, b) => b.val - a.val)
-              .map((cat, i) => (
-                <div key={cat.key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 8, borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
-                  <span>{cat.icon} {cat.label}</span>
-                  <span style={{ color: 'var(--accent-green)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(cat.val)}</span>
-                </div>
-              ))}
-            {expenses.education.amount > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-                <span>🎓 Education</span>
-                <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(expenses.education.amount)}</span>
-              </div>
-            )}
-            {expenses.travel / 12 > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>✈️ Travel (Monthly)</span>
-                <span style={{ color: 'var(--accent-orange)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(expenses.travel / 12)}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
-
       {/* Standard categories */}
       <Card>
         <SectionLabel>Regular Monthly Expenses</SectionLabel>
@@ -339,6 +257,87 @@ export default function Expenses({ state, setState }) {
               </div>
             );
           })}
+        </div>
+      </Card>
+
+      {/* Expense breakdown by category */}
+      <Card style={{ marginBottom: 20 }}>
+        <SectionLabel>Where Your Money Goes</SectionLabel>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'center' }}>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={CATEGORIES
+                  .map(c => ({ name: c.label.split('(')[0].trim(), value: expenses[c.key], icon: c.icon }))
+                  .filter(c => c.value > 0)
+                  .sort((a, b) => b.value - a.value)}
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={80}
+                dataKey="value"
+                paddingAngle={2}
+              >
+                {['var(--accent-cyan)', 'var(--accent-blue)', 'var(--accent-green)', 'var(--accent-orange)', 'var(--accent-purple)', '#FF6B6B', '#4ECDC4', '#95E1D3'].map((color, i) => (
+                  <Cell key={i} fill={color} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v) => fmtINR(v)} />
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div style={{ fontSize: 11 }}>
+            {CATEGORIES
+              .map(c => ({ ...c, val: expenses[c.key] }))
+              .filter(c => c.val > 0)
+              .sort((a, b) => b.val - a.val)
+              .map((cat, i) => (
+                <div key={cat.key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 8, borderBottom: i < 3 ? '1px solid var(--border)' : 'none' }}>
+                  <span>{cat.icon} {cat.label}</span>
+                  <span style={{ color: 'var(--accent-green)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(cat.val)}</span>
+                </div>
+              ))}
+            {expenses.education.amount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+                <span>🎓 Education</span>
+                <span style={{ color: 'var(--accent-cyan)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(expenses.education.amount)}</span>
+              </div>
+            )}
+            {expenses.travel / 12 > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>✈️ Travel (Monthly)</span>
+                <span style={{ color: 'var(--accent-orange)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(expenses.travel / 12)}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+       {/* Total */}
+      <Card style={{ marginBottom: 20, background: 'rgba(100,181,246,0.05)', borderColor: 'rgba(100,181,246,0.2)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>TOTAL MONTHLY EXPENSE TODAY</div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{fmtINR(totalMonthly)}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>Yearly</div>
+            <div style={{ fontSize: 16, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{fmtINR(totalMonthly * 12)}</div>
+          </div>
+        </div>
+
+        {/* Medical vs Non-Medical split */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+          <div style={{ background: 'rgba(100,181,246,0.1)', padding: '10px 12px', borderRadius: 6 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>Non-Medical</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-blue)', fontFamily: 'var(--font-mono)' }}>{fmtINR(nonMedTotal)}</div>
+            <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{((nonMedTotal / totalMonthly) * 100).toFixed(0)}% of total</div>
+          </div>
+          <div style={{ background: 'rgba(239,83,80,0.1)', padding: '10px 12px', borderRadius: 6 }}>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>Medical & Health</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent-red)', fontFamily: 'var(--font-mono)' }}>{fmtINR(medMonthly)}</div>
+            <div style={{ fontSize: 9, color: 'var(--text-dim)', marginTop: 2 }}>{((medMonthly / totalMonthly) * 100).toFixed(0)}% of total</div>
+          </div>
         </div>
       </Card>
     </div>

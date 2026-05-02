@@ -70,34 +70,7 @@ export default function Portfolio({ state, setState }) {
         </div>
       </div>
 
-      {/* NPS */}
-      <AssetRow icon="🏛️" label="NPS — National Pension System" color="var(--accent-orange)">
-        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
-          Locked till age 60 · 60% lump sum + 40% annuity at maturity
-        </div>
-        <AmountInput label="Current Value" value={portfolio.nps.current} onChange={v => setAsset('nps', 'current', v)} />
-        <AmountInput label="Monthly Contribution" value={portfolio.nps.monthly} max={100000} step={500} onChange={v => setAsset('nps', 'monthly', v)} />
-        <SliderInput label="Expected Return" value={portfolio.nps.returnRate} min={6} max={14} step={0.5}
-          display={`${portfolio.nps.returnRate}%`} onChange={v => setAsset('nps', 'returnRate', v)} color="var(--accent-orange)" />
-        <SliderInput label="Annuity Rate (at 60)" value={portfolio.nps.annuityRate} min={4} max={9} step={0.25}
-          display={`${portfolio.nps.annuityRate}%`} onChange={v => setAsset('nps', 'annuityRate', v)} color="var(--accent-orange)" />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 12, fontSize: 11 }}>
-          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 6 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 4 }}>You'll Invest</div>
-            <div style={{ color: 'var(--accent-orange)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(calcAssetProjection('nps').totalContributed)}</div>
-          </div>
-          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 6 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 4 }}>At Retirement</div>
-            <div style={{ color: 'var(--accent-orange)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{proj('nps')}</div>
-          </div>
-          <div style={{ background: 'rgba(102,187,106,0.08)', padding: '8px 10px', borderRadius: 6 }}>
-            <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 4 }}>Your Gain</div>
-            <div style={{ color: 'var(--accent-green)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(calcAssetProjection('nps').gain)}</div>
-          </div>
-        </div>
-      </AssetRow>
-
-      {/* PF */}
+         {/* PF */}
       <AssetRow icon="💼" label="PF / EPF" color="var(--accent-blue)">
         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
           Goes to Bucket 1 (Liquid) at retirement · First to withdraw
@@ -143,6 +116,33 @@ export default function Portfolio({ state, setState }) {
           <div style={{ background: 'rgba(102,187,106,0.08)', padding: '8px 10px', borderRadius: 6 }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 4 }}>Your Gain</div>
             <div style={{ color: 'var(--accent-green)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(calcAssetProjection('market').gain)}</div>
+          </div>
+        </div>
+      </AssetRow>
+
+      {/* NPS */}
+      <AssetRow icon="🏛️" label="NPS — National Pension System" color="var(--accent-orange)">
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12 }}>
+          Locked till age 60 · 60% lump sum + 40% annuity at maturity
+        </div>
+        <AmountInput label="Current Value" value={portfolio.nps.current} onChange={v => setAsset('nps', 'current', v)} />
+        <AmountInput label="Monthly Contribution" value={portfolio.nps.monthly} max={100000} step={500} onChange={v => setAsset('nps', 'monthly', v)} />
+        <SliderInput label="Expected Return" value={portfolio.nps.returnRate} min={6} max={14} step={0.5}
+          display={`${portfolio.nps.returnRate}%`} onChange={v => setAsset('nps', 'returnRate', v)} color="var(--accent-orange)" />
+        <SliderInput label="Annuity Rate (at 60)" value={portfolio.nps.annuityRate} min={4} max={9} step={0.25}
+          display={`${portfolio.nps.annuityRate}%`} onChange={v => setAsset('nps', 'annuityRate', v)} color="var(--accent-orange)" />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 12, fontSize: 11 }}>
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 6 }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 4 }}>You'll Invest</div>
+            <div style={{ color: 'var(--accent-orange)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(calcAssetProjection('nps').totalContributed)}</div>
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 10px', borderRadius: 6 }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 4 }}>At Retirement</div>
+            <div style={{ color: 'var(--accent-orange)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{proj('nps')}</div>
+          </div>
+          <div style={{ background: 'rgba(102,187,106,0.08)', padding: '8px 10px', borderRadius: 6 }}>
+            <div style={{ color: 'var(--text-muted)', fontSize: 9, marginBottom: 4 }}>Your Gain</div>
+            <div style={{ color: 'var(--accent-green)', fontWeight: 600, fontFamily: 'var(--font-mono)' }}>{fmtINR(calcAssetProjection('nps').gain)}</div>
           </div>
         </div>
       </AssetRow>
